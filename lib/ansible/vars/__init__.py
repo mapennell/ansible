@@ -219,6 +219,7 @@ class VariableManager:
             if self._inventory is not None:
                 hostvars = HostVars(vars_manager=self, inventory=self._inventory, loader=loader)
                 all_vars['hostvars'] = hostvars
+                all_vars['groups']   = self._inventory.groups_list()
 
         if task:
             if task._role:
@@ -272,9 +273,17 @@ class VariableManager:
                 data = self._combine_vars(data, results)
 
         else:
-            data = loader.load_from_file(path)
-            if data is None:
-                data = dict()
+            file_name, ext = os.path.splitext(path)
+            data = None
+            if not ext:
+                for ext in ('', '.yml', '.yaml'):
+                    new_path = path + ext
+                    if loader.path_exists(new_path):
+                       data = loader.load_from_file(new_path)
+                       break
+            else:
+                if loader.path_exists(path):
+                    data = loader.load_from_file(path)
 
         name = self._get_inventory_basename(path)
         return (name, data)
@@ -286,9 +295,12 @@ class VariableManager:
         the extension, for matching against a given inventory host name
         '''
 
-        if loader.path_exists(path):
-            (name, data) = self._load_inventory_file(path, loader)
+        (name, data) = self._load_inventory_file(path, loader)
+        if data:
             self._host_vars_files[name] = data
+            return data
+        else:
+            return dict()
 
     def add_group_vars_file(self, path, loader):
         '''
@@ -297,9 +309,12 @@ class VariableManager:
         the extension, for matching against a given inventory host name
         '''
 
-        if loader.path_exists(path):
-            (name, data) = self._load_inventory_file(path, loader)
+        (name, data) = self._load_inventory_file(path, loader)
+        if data:
             self._group_vars_files[name] = data
+            return data
+        else:
+            return dict()
 
     def set_host_facts(self, host, facts):
         '''

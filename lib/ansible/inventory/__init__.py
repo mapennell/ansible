@@ -144,7 +144,8 @@ class Inventory(object):
 
             vars_loader.add_directory(self.basedir(), with_subdir=True)
         else:
-            raise errors.AnsibleError("Unable to find an inventory file, specify one with -i ?")
+            raise errors.AnsibleError("Unable to find an inventory file (%s), "
+                                      "specify one with -i ?" % host_list)
 
         self._vars_plugins = [ x for x in vars_loader.all(self) ]
 
@@ -363,7 +364,7 @@ class Inventory(object):
                 for host in group.get_hosts():
                     __append_host_to_results(host)
             else:
-                if self._match(group.name, pattern):
+                if self._match(group.name, pattern) and group.name not in ('all', 'ungrouped'):
                     for host in group.get_hosts():
                         __append_host_to_results(host)
                 else:
@@ -371,7 +372,7 @@ class Inventory(object):
                     for host in matching_hosts:
                         __append_host_to_results(host)
 
-        if pattern in ["localhost", "127.0.0.1"] and len(results) == 0:
+        if pattern in ["localhost", "127.0.0.1", "::1"] and len(results) == 0:
             new_host = self._create_implicit_localhost(pattern)
             results.append(new_host)
         return results
@@ -407,9 +408,9 @@ class Inventory(object):
         return self._hosts_cache[hostname]
 
     def _get_host(self, hostname):
-        if hostname in ['localhost','127.0.0.1']:
+        if hostname in ['localhost', '127.0.0.1', '::1']:
             for host in self.get_group('all').get_hosts():
-                if host.name in ['localhost', '127.0.0.1']:
+                if host.name in ['localhost', '127.0.0.1', '::1']:
                     return host
             return self._create_implicit_localhost(hostname)
         else:
@@ -511,7 +512,7 @@ class Inventory(object):
         """ return a list of hostnames for a pattern """
 
         result = [ h for h in self.get_hosts(pattern) ]
-        if len(result) == 0 and pattern in ["localhost", "127.0.0.1"]:
+        if len(result) == 0 and pattern in ["localhost", "127.0.0.1", "::1"]:
             result = [pattern]
         return result
 
@@ -661,11 +662,11 @@ class Inventory(object):
             if group and host is None:
                 # load vars in dir/group_vars/name_of_group
                 base_path = os.path.join(basedir, "group_vars/%s" % group.name)
-                self._variable_manager.add_group_vars_file(base_path, self._loader)
+                results = self._variable_manager.add_group_vars_file(base_path, self._loader)
             elif host and group is None:
                 # same for hostvars in dir/host_vars/name_of_host
                 base_path = os.path.join(basedir, "host_vars/%s" % host.name)
-                self._variable_manager.add_host_vars_file(base_path, self._loader)
+                results = self._variable_manager.add_host_vars_file(base_path, self._loader)
 
         # all done, results is a dictionary of variables for this particular host.
         return results

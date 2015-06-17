@@ -25,6 +25,8 @@ import subprocess
 #import select
 #import fcntl
 
+import ansible.constants as C
+
 from ansible.errors import AnsibleError, AnsibleFileNotFound
 from ansible.plugins.connections import ConnectionBase
 
@@ -46,10 +48,10 @@ class Connection(ConnectionBase):
             self._connected = True
         return self
 
-    def exec_command(self, cmd, tmp_path, executable='/bin/sh', in_data=None):
+    def exec_command(self, cmd, tmp_path, in_data=None, sudoable=True):
         ''' run a command on the local host '''
 
-        super(Connection, self).exec_command(cmd, tmp_path, executable=executable, in_data=in_data)
+        super(Connection, self).exec_command(cmd, tmp_path, in_data=in_data)
 
         debug("in local.exec_command()")
         # su requires to be run from a terminal, and therefore isn't supported here (yet?)
@@ -59,7 +61,7 @@ class Connection(ConnectionBase):
         if in_data:
             raise AnsibleError("Internal Error: this module does not support optimized module pipelining")
 
-        executable = executable.split()[0] if executable else None
+        executable = C.DEFAULT_EXECUTABLE.split()[0] if C.DEFAULT_EXECUTABLE else None
 
         self._display.vvv("{0} EXEC {1}".format(self._connection_info.remote_addr, cmd))
         # FIXME: cwd= needs to be set to the basedir of the playbook
@@ -112,7 +114,6 @@ class Connection(ConnectionBase):
 
         super(Connection, self).put_file(in_path, out_path)
 
-        #vvv("PUT {0} TO {1}".format(in_path, out_path), host=self.host)
         self._display.vvv("{0} PUT {1} TO {2}".format(self._connection_info.remote_addr, in_path, out_path))
         if not os.path.exists(in_path):
             raise AnsibleFileNotFound("file or module does not exist: {0}".format(in_path))
@@ -130,7 +131,6 @@ class Connection(ConnectionBase):
 
         super(Connection, self).fetch_file(in_path, out_path)
 
-        #vvv("FETCH {0} TO {1}".format(in_path, out_path), host=self.host)
         self._display.vvv("{0} FETCH {1} TO {2}".format(self._connection_info.remote_addr, in_path, out_path))
         self.put_file(in_path, out_path)
 

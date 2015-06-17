@@ -16,6 +16,7 @@ Deprecated Modules (new ones in parens):
 
 New Modules:
   * amazon: ec2_ami_find
+  * amazon: ec2_eni_facts
   * amazon: elasticache_subnet_group
   * amazon: ec2_win_password
   * amazon: iam
@@ -38,6 +39,7 @@ New Modules:
   * cloudstack: cs_sshkeypair
   * cloudstack: cs_securitygroup
   * cloudstack: cs_securitygroup_rule
+  * cloudstack: cs_template
   * cloudstack: cs_vmsnapshot
   * datadog_monitor
   * expect
@@ -80,6 +82,7 @@ New Modules:
 New Inventory scripts:
   * cloudstack
   * fleetctl
+  * serf
 
 Other Notable Changes:
 
